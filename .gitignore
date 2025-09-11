@@ -46,7 +46,6 @@ src-tauri/Cargo.lock
 
 # Tauri build artifacts
 src-tauri/gen/
-src-tauri/icons/
 src-tauri/target/
 src-tauri/WixTools/
 
