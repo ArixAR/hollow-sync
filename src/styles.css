@@ -1,0 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Cinzel', serif;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-app-region: no-drag;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* disable context menu globally */
+* {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* force hollow font on most text elements */
+h1, h2, h3, h4, h5, h6, p, span, div, button, input, label {
+  font-family: 'Cinzel', serif !important;
+}
+
+#root {
+  height: 100vh;
+  width: 100vw;
+}
+
+.hollow-border {
+  border: 2px solid #cef2e7;
+  border-radius: 8px;
+  position: relative;
+}
+
+.hollow-border::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #cef2e7, transparent, #cef2e7);
+  border-radius: 8px;
+  z-index: -1;
+  opacity: 0.5;
+}
+
+.glow-effect {
+  box-shadow: 0 0 20px rgba(206, 242, 231, 0.3);
+}
+
+.void-gradient {
+  background: linear-gradient(135deg, #0c0c1e 0%, #1a1a3a 100%);
+}
+
+.silk-gradient {
+  background: linear-gradient(135deg, #cef2e7 0%, #def6ee 100%);
+}
+
+/* custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(26, 26, 58, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(206, 242, 231, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(206, 242, 231, 0.5);
+}
+
+/* allow selection for input fields */
+input, textarea {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}
+
+/* toast progress animation */
+@keyframes shrink {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
