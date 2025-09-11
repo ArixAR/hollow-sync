@@ -1,6 +1,8 @@
 # Hollow Sync
 
-A cross-platform GUI application for **Hollow Knight** and **Hollow Knight: Silksong** that lets you transfer your progress between PC and Nintendo Switch.
+An application for **Hollow Knight** and **Hollow Knight: Silksong** that lets you transfer your progress between PC and Nintendo Switch.
+
+![Hollow Sync Demo](./demo.gif)
 
 > **Prefer command line?** Check out the [CLI version](https://gist.github.com/ArixAR/1e4c9672a8c95e398d369efe5ff54807) for terminal based usage.
 
