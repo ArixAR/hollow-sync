@@ -195,7 +195,7 @@ function App() {
   const handleAutoSetup = async (save: SaveData) => {
     setLoading(true);
     try {
-      const outputName = `${selectedGame}-slot${save.slot}.zip`;
+      const outputName = `${selectedGame}-slot${save.slot}.json`;
       const newConfig = {
         pcSave: save.path,
         switchSave: outputName,
@@ -568,7 +568,7 @@ function App() {
 
         <div>
           <label className="block text-sm font-hollow font-medium text-knight-100 mb-1">
-            Input ({convertDirection === 'pc-to-switch' ? '.dat' : '.zip/.json'})
+            Input ({convertDirection === 'pc-to-switch' ? '.dat' : '.json/.zip'})
           </label>
           <div className="flex gap-2">
             <input
@@ -612,7 +612,7 @@ function App() {
               variant="secondary"
               size="sm"
               onClick={async () => {
-                const extensions = convertDirection === 'pc-to-switch' ? ['zip'] : ['dat'];
+                const extensions = convertDirection === 'pc-to-switch' ? ['json'] : ['dat'];
                 const path = await openSaveDialog('Save As', [
                   { name: 'Save Files', extensions }
                 ]);

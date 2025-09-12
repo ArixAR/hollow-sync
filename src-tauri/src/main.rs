@@ -71,10 +71,10 @@ async fn get_file_info(file_path: String) -> Result<serde_json::Value, String> {
 
 fn generate_pc_to_switch_output(input_path: &str, input_filename: &str) -> String {
     if let Ok(saves_dir) = SaveManager::get_saves_dir() {
-        return saves_dir.join(format!("{}.zip", input_filename)).to_string_lossy().to_string();
+        return saves_dir.join(format!("{}.json", input_filename)).to_string_lossy().to_string();
     }
     
-    format!("{}.zip", input_path.replace(".dat", ""))
+    format!("{}.json", input_path.replace(".dat", ""))
 }
 
 fn generate_switch_to_pc_output(input_path: &str, input_filename: &str) -> String {
