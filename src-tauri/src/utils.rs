@@ -72,9 +72,15 @@ pub fn get_game_paths(game_key: Option<&str>) -> Vec<(String, PathBuf)> {
 }
 
 pub fn is_jksv_format(file_path: &str) -> bool {
-    std::path::Path::new(file_path)
-        .extension()
-        .and_then(|ext| ext.to_str())
-        .map(|ext| ext.to_lowercase() == "zip")
-        .unwrap_or(false)
+    let path = std::path::Path::new(file_path);
+    
+    // check for zip file (legacy support)
+    if let Some(ext) = path.extension() {
+        if ext.to_str().map(|s| s.to_lowercase()) == Some("zip".to_string()) {
+            return true;
+        }
+    }
+    
+    // check for directory or file without extension
+    path.is_dir() || (!path.exists() && !file_path.contains('.'))
 }

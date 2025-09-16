@@ -55,10 +55,10 @@ npm run tauri build
 
 **Step 3: Transfer to Switch**
 1. Insert your Switch SD card into your PC
-2. Copy the generated `.zip` file to the appropriate JKSV folder:
+2. Copy the generated backup folder to the appropriate JKSV folder:
    - Hollow Knight: `/JKSV/Hollow Knight/`
    - Silksong: `/JKSV/Hollow Knight  Silksong/`
-3. Use JKSV on Switch to restore the backup
+3. Use JKSV on Switch to restore the backup from the folder
 
 ## Alternative: Automatic Cloud Sync
 

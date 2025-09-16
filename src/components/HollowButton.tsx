@@ -9,6 +9,7 @@ interface HollowButtonProps {
   icon?: LucideIcon;
   disabled?: boolean;
   loading?: boolean;
+  className?: string;
 }
 
 export const HollowButton: React.FC<HollowButtonProps> = ({
@@ -19,11 +20,12 @@ export const HollowButton: React.FC<HollowButtonProps> = ({
   icon: Icon,
   disabled = false,
   loading = false,
+  className = '',
 }) => {
   const baseClasses = "relative font-hollow font-medium transition-all duration-300 rounded-lg border-2 focus:outline-none";
   
   const variantClasses = {
-    primary: "border-silk-500 bg-silk-500/10 text-silk-100 hover:bg-silk-500/20 hover:border-silk-400 focus:border-silk-300 focus:bg-silk-500/25 active:bg-silk-500/30 hover:shadow-lg hover:shadow-silk-500/20",
+    primary: "border-silk-500 bg-silk-500/20 text-silk-100 hover:bg-silk-500/30 hover:border-silk-400 focus:border-silk-300 focus:bg-silk-500/35 active:bg-silk-500/40 hover:shadow-lg hover:shadow-silk-500/30 shadow-md shadow-silk-500/15",
     secondary: "border-knight-400 bg-knight-400/10 text-knight-100 hover:bg-knight-400/20 hover:border-knight-300 focus:border-knight-200 focus:bg-knight-400/25 active:bg-knight-400/30 hover:shadow-lg hover:shadow-knight-400/20",
     danger: "border-red-500 bg-red-500/10 text-red-100 hover:bg-red-500/20 hover:border-red-400 focus:border-red-300 focus:bg-red-500/25 active:bg-red-500/30 hover:shadow-lg hover:shadow-red-500/20"
   };
@@ -44,7 +46,7 @@ export const HollowButton: React.FC<HollowButtonProps> = ({
         onClick?.();
         e.currentTarget.blur();
       }}
-      className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${disabledClasses} flex items-center justify-center gap-2`}
+      className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${disabledClasses} ${className} flex items-center justify-center gap-2`}
     >
       {Icon ? <Icon size={16} /> : null}
       {children}

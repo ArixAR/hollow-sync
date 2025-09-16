@@ -49,9 +49,9 @@ async fn convert_switch_to_pc(input_path: String, output_path: String) -> Result
 }
 
 #[tauri::command]
-async fn create_backup(save_file: String, output_file: String) -> Result<(), String> {
+async fn create_backup(save_file: String, output_dir: String) -> Result<(), String> {
     let manager = SaveManager::new();
-    manager.create_backup(&save_file, &output_file).await
+    manager.create_backup(&save_file, &output_dir).await
         .map_err(|e| e.to_string())
 }
 
@@ -69,12 +69,59 @@ async fn get_file_info(file_path: String) -> Result<serde_json::Value, String> {
         .map_err(|e| e.to_string())
 }
 
-fn generate_pc_to_switch_output(input_path: &str, input_filename: &str) -> String {
-    if let Ok(saves_dir) = SaveManager::get_saves_dir() {
-        return saves_dir.join(format!("{}.json", input_filename)).to_string_lossy().to_string();
+#[tauri::command]
+async fn get_saves_dir() -> Result<String, String> {
+    SaveManager::get_saves_dir()
+        .map(|path| path.to_string_lossy().to_string())
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn open_path(path: String) -> Result<(), String> {
+    use std::process::Command;
+    use std::path::Path;
+    
+    let target_path = if path.contains(".dat") {
+        Path::new(&path).parent()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or(path)
+    } else {
+        path
+    };
+    
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("explorer")
+            .arg(&target_path)
+            .spawn()
+            .map_err(|e| format!("Failed to open path: {}", e))?;
     }
     
-    format!("{}.json", input_path.replace(".dat", ""))
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open")
+            .arg(&target_path)
+            .spawn()
+            .map_err(|e| format!("Failed to open path: {}", e))?;
+    }
+    
+    #[cfg(target_os = "linux")]
+    {
+        Command::new("xdg-open")
+            .arg(&target_path)
+            .spawn()
+            .map_err(|e| format!("Failed to open path: {}", e))?;
+    }
+    
+    Ok(())
+}
+
+fn generate_pc_to_switch_output(input_path: &str, input_filename: &str) -> String {
+    if let Ok(saves_dir) = SaveManager::get_saves_dir() {
+        return saves_dir.join(format!("{}.dat", input_filename)).to_string_lossy().to_string();
+    }
+    
+    format!("{}.dat", input_path.replace(".dat", ""))
 }
 
 fn generate_switch_to_pc_output(input_path: &str, input_filename: &str) -> String {
@@ -82,11 +129,7 @@ fn generate_switch_to_pc_output(input_path: &str, input_filename: &str) -> Strin
         return saves_dir.join(format!("{}.dat", input_filename)).to_string_lossy().to_string();
     }
     
-    if input_path.ends_with(".zip") {
-        return input_path.replace(".zip", ".dat");
-    }
-    
-    format!("{}.dat", input_path.replace(".json", ""))
+    format!("{}.dat", input_path.replace(".dat", ""))
 }
 
 fn get_input_filename(input_path: &str) -> &str {
@@ -140,7 +183,9 @@ fn main() {
             convert_save,
             create_backup,
             extract_backup,
-            get_file_info
+            get_file_info,
+            get_saves_dir,
+            open_path
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

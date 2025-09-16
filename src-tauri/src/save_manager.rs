@@ -2,9 +2,9 @@ use crate::crypto::SaveCrypto;
 use crate::utils::{Games, get_game_paths, is_jksv_format};
 use serde_json::Value;
 use std::fs::{self, File};
-use std::io::{Read, Write};
+use std::io::{Read};
 use std::path::{Path, PathBuf};
-use zip::{ZipArchive, ZipWriter, write::FileOptions};
+use zip::{ZipArchive};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug)]
@@ -310,16 +310,28 @@ impl SaveManager {
 
     async fn sync_switch_to_pc(&self, switch_save: &str, pc_save: &str) -> Result<(), Box<dyn std::error::Error>> {
         if is_jksv_format(switch_save) {
-            let temp_dir = Path::new(pc_save).parent().unwrap().join("temp-extract");
-            fs::create_dir_all(&temp_dir)?;
-            
-            let extracted = self.extract_backup(switch_save, temp_dir.to_str().unwrap()).await?;
-            if extracted.is_empty() {
-                return Err("No save files found in backup".into());
+            if Path::new(switch_save).is_dir() {
+                let save_files = self.find_save_files_in_directory(switch_save).await?;
+                if save_files.is_empty() {
+                    return Err("No save files found in backup directory".into());
+                }
+                
+                if let Some(parent) = Path::new(pc_save).parent() {
+                    fs::create_dir_all(parent)?;
+                }
+                fs::copy(&save_files[0], pc_save)?;
+            } else {
+                let temp_dir = Path::new(pc_save).parent().unwrap().join("temp-extract");
+                fs::create_dir_all(&temp_dir)?;
+                
+                let extracted = self.extract_backup(switch_save, temp_dir.to_str().unwrap()).await?;
+                if extracted.is_empty() {
+                    return Err("No save files found in backup".into());
+                }
+                
+                fs::copy(&extracted[0], pc_save)?;
+                fs::remove_dir_all(&temp_dir)?;
             }
-            
-            fs::copy(&extracted[0], pc_save)?;
-            fs::remove_dir_all(&temp_dir)?;
         } else {
             let switch_data = fs::read_to_string(switch_save)?;
             let pc_data = self.crypto.switch_to_pc(&switch_data)?;
@@ -330,6 +342,21 @@ impl SaveManager {
             fs::write(pc_save, pc_data)?;
         }
         Ok(())
+    }
+
+    async fn find_save_files_in_directory(&self, directory: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+        let mut save_files = Vec::new();
+        let entries = fs::read_dir(directory)?;
+        
+        for entry in entries.flatten() {
+            if let Some(file_name) = entry.file_name().to_str() {
+                if file_name.ends_with(".dat") || file_name.contains("user") {
+                    save_files.push(entry.path().to_string_lossy().to_string());
+                }
+            }
+        }
+        
+        Ok(save_files)
     }
 
     pub async fn pc_to_switch(&self, input_path: &str, output_path: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -354,20 +381,15 @@ impl SaveManager {
         Ok(())
     }
 
-    pub async fn create_backup(&self, save_file: &str, output_file: &str) -> Result<(), Box<dyn std::error::Error>> {
-        let file = File::create(output_file)?;
-        let mut zip = ZipWriter::new(file);
-        
-        let options = FileOptions::default()
-            .compression_method(zip::CompressionMethod::Stored);
+    pub async fn create_backup(&self, save_file: &str, output_dir: &str) -> Result<(), Box<dyn std::error::Error>> {
+        fs::create_dir_all(output_dir)?;
         
         let save_data = fs::read(save_file)?;
         let file_name = Path::new(save_file).file_name().unwrap().to_str().unwrap();
+        let backup_file_path = Path::new(output_dir).join(file_name);
         
-        zip.start_file(file_name, options)?;
-        zip.write_all(&save_data)?;
-        zip.finish()?;
-        
+        fs::write(&backup_file_path, &save_data)?;
+
         Ok(())
     }
 

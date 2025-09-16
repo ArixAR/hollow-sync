@@ -8,6 +8,7 @@ import { HollowLogo } from './components/HollowLogo';
 import { ToastContainer } from './components/Toast';
 import { GameToggle } from './components/GameToggle';
 import { TabSlider } from './components/TabSlider';
+import { SwitchTutorial } from './components/SwitchTutorial';
 import { 
   RefreshCw, 
   Settings, 
@@ -58,6 +59,8 @@ function App() {
   const [convertOutputPath, setConvertOutputPath] = useState('');
   const [convertDirection, setConvertDirection] = useState<'pc-to-switch' | 'switch-to-pc'>('pc-to-switch');
   const [converting, setConverting] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [isTutorialHidden, setHideTutorial] = useState(false);
 
   useEffect(() => {
     loadInitialData();
@@ -151,12 +154,17 @@ function App() {
     return path;
   };
 
-  const copyToClipboard = async (text: string, type: string) => {
+  const openPath = async (path: string, type: string) => {
     try {
-      await navigator.clipboard.writeText(text);
-      showToast('success', `${type} path copied to clipboard`);
+      await invoke('open_path', { path });
     } catch (error) {
-      showToast('error', 'Failed to copy to clipboard');
+      console.error('Failed to open path:', error);
+      try {
+        await navigator.clipboard.writeText(path);
+        showToast('warning', `Save path copied to clipboard`);
+      } catch (clipError) {
+        showToast('error', `Failed to open ${type}`);
+      }
     }
   };
 
@@ -176,14 +184,25 @@ function App() {
       });
       
       let message = 'Save files synchronized successfully';
+      let pathToOpen = '';
+      
       if (forceDirection === 'pc-to-switch') {
         message = 'PC save copied to Switch format';
+        pathToOpen = config.switchSave;
+        if (!isTutorialHidden) {
+          setShowTutorial(true);
+        }
       } else if (forceDirection === 'switch-to-pc') {
         message = 'Switch save copied to PC format';
+        pathToOpen = config.pcSave;
       }
       
       showToast('success', message);
       await loadConfig();
+      
+      if (forceDirection === 'pc-to-switch' && pathToOpen) {
+        setTimeout(() => openPath(pathToOpen, 'destination'), 500);
+      }
     } catch (error) {
       showToast('error', `Sync failed: ${error}`);
     } finally {
@@ -195,10 +214,13 @@ function App() {
   const handleAutoSetup = async (save: SaveData) => {
     setLoading(true);
     try {
-      const outputName = `${selectedGame}-slot${save.slot}.json`;
+      const savesDir = await invoke<string>('get_saves_dir').catch(() => 'saves');
+      const outputName = `${selectedGame}-slot${save.slot}`;
+      const fullSwitchPath = `${savesDir}\\${outputName}`;
+      
       const newConfig = {
         pcSave: save.path,
-        switchSave: outputName,
+        switchSave: fullSwitchPath,
         lastSync: null
       };
       
@@ -255,6 +277,21 @@ function App() {
     }
   };
 
+  const openDirectoryDialog = async (title: string) => {
+    try {
+      const { open } = await import('@tauri-apps/api/dialog');
+      const result = await open({
+        title,
+        multiple: false,
+        directory: true
+      });
+      return result as string | null;
+    } catch (error) {
+      showToast('error', `Failed to open directory dialog: ${error}`);
+      return null;
+    }
+  };
+
   const openSaveDialog = async (title: string, filters: any[]) => {
     try {
       const { save } = await import('@tauri-apps/api/dialog');
@@ -284,6 +321,13 @@ function App() {
       });
       
       showToast('success', `Conversion completed: ${result}`);
+      
+      if (convertDirection === 'pc-to-switch' && !isTutorialHidden) {
+        setShowTutorial(true);
+      }
+      
+      setTimeout(() => openPath(result, 'converted file'), 500);
+      
       setConvertInputPath('');
       setConvertOutputPath('');
     } catch (error) {
@@ -307,14 +351,14 @@ function App() {
                 </div>
                 <div 
                   className="bg-void-700 p-3 rounded-md border border-void-600 cursor-pointer hover:bg-void-600 hover:border-silk-500/30 transition-all duration-200"
-                  onClick={() => copyToClipboard(config.pcSave, 'PC save')}
+                  onClick={() => openPath(config.pcSave, 'PC save')}
                   title={`${config.pcSave}`}
                 >
                   <div className="text-sm text-knight-200 font-mono leading-relaxed">
                     {formatPath(config.pcSave)}
                   </div>
                   <div className="text-xs text-knight-400 mt-1 italic">
-                    {config.pcSave.length > 50 ? 'Click to copy • Hover to see full path' : 'Click to copy'}
+                    {config.pcSave.length > 50 ? 'Click to open • Hover to see full path' : 'Click to open'}
                   </div>
                 </div>
               </div>
@@ -326,14 +370,14 @@ function App() {
                 </div>
                 <div 
                   className="bg-void-700 p-3 rounded-md border border-void-600 cursor-pointer hover:bg-void-600 hover:border-silk-500/30 transition-all duration-200"
-                  onClick={() => copyToClipboard(config.switchSave, 'Switch save')}
+                  onClick={() => openPath(config.switchSave, 'Switch save')}
                   title={`${config.switchSave}`}
                 >
                   <div className="text-sm text-knight-200 font-mono leading-relaxed">
                     {formatPath(config.switchSave)}
                   </div>
                   <div className="text-xs text-knight-400 mt-1 italic">
-                    {config.switchSave.length > 50 ? 'Click to copy • Hover to see full path' : 'Click to copy'}
+                    {config.switchSave.length > 50 ? 'Click to open • Hover to see full path' : 'Click to open'}
                   </div>
                 </div>
               </div>
@@ -424,7 +468,7 @@ function App() {
 
           <div>
             <label className="block text-sm font-hollow font-medium text-knight-100 mb-1">
-              Switch Save File (.zip or .json)
+              Switch Save File (folder)
             </label>
             <div className="flex gap-2">
               <input
@@ -439,13 +483,11 @@ function App() {
                 variant="secondary"
                 size="sm"
                 onClick={async () => {
-                  const path = await openSaveDialog('Choose Switch Save Path', [
-                    { name: 'Save Files', extensions: ['zip', 'json'] }
-                  ]);
+                  const path = await openDirectoryDialog('Choose Switch Save Directory');
                   if (path) setManualSwitchPath(path);
                 }}
               >
-                Save As
+                Select Folder
               </HollowButton>
             </div>
           </div>
@@ -568,7 +610,7 @@ function App() {
 
         <div>
           <label className="block text-sm font-hollow font-medium text-knight-100 mb-1">
-            Input ({convertDirection === 'pc-to-switch' ? '.dat' : '.json/.zip'})
+            Input (.dat)
           </label>
           <div className="flex gap-2">
             <input
@@ -583,9 +625,9 @@ function App() {
               variant="secondary"
               size="sm"
               onClick={async () => {
-                const extensions = convertDirection === 'pc-to-switch' ? ['dat'] : ['zip', 'json'];
+                const extensions = ['dat'];
                 const path = await openFileDialog('Select Input File', [
-                  { name: 'Save Files', extensions }
+                  { name: 'Save File', extensions }
                 ]);
                 if (path) setConvertInputPath(path);
               }}
@@ -612,14 +654,18 @@ function App() {
               variant="secondary"
               size="sm"
               onClick={async () => {
-                const extensions = convertDirection === 'pc-to-switch' ? ['json'] : ['dat'];
-                const path = await openSaveDialog('Save As', [
-                  { name: 'Save Files', extensions }
-                ]);
-                if (path) setConvertOutputPath(path);
+                if (convertDirection === 'pc-to-switch') {
+                  const path = await openDirectoryDialog('Choose Output Folder');
+                  if (path) setConvertOutputPath(path);
+                } else {
+                  const path = await openSaveDialog('Choose Output File', [
+                    { name: 'Save Files', extensions: ['dat'] }
+                  ]);
+                  if (path) setConvertOutputPath(path);
+                }
               }}
             >
-              Save As
+              {convertDirection === 'pc-to-switch' ? 'Choose Folder' : 'Save As'}
             </HollowButton>
           </div>
         </div>
@@ -645,6 +691,14 @@ function App() {
     { key: 'silksong', name: 'Silksong' },
     { key: 'hk', name: 'Hollow Knight' }
   ];
+
+  const handleCloseTutorial = () => {
+    setShowTutorial(false);
+  };
+
+  const handleHideTutorial = (hide: boolean) => {
+    setHideTutorial(hide);
+  };
 
   return (
     <div className="h-screen void-gradient relative overflow-hidden">
@@ -689,6 +743,14 @@ function App() {
         </div>
         
         <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
+        {showTutorial && (
+          <SwitchTutorial 
+            onClose={handleCloseTutorial}
+            onDontShowAgain={handleHideTutorial}
+            game={selectedGame}
+            switchSavePath={config?.switchSave}
+          />
+        )}
       </div>
     </div>
   );
