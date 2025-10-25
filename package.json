@@ -1,7 +1,7 @@
 {
   "name": "hollow-sync",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.1.1",
   "type": "module",
   "author": "FiveSkill",
   "license": "GPL-3.0-only",

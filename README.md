@@ -60,6 +60,21 @@ npm run tauri build
    - Silksong: `/JKSV/Hollow Knight  Silksong/`
 3. Use JKSV on Switch to restore the backup from the folder
 
+## JKSV Error: "Backup contains no meta file!" 
+
+If JKSV returns an error about missing `.nx_save_meta.bin` or the save doesn't appear after restore, follow this workaround:
+
+1. **On your Switch**: Start a new game in Hollow Knight/Silksong and play until it creates a save file
+2. **Create JKSV backup**: Open JKSV, select the game, and create a backup of this new save
+3. **Copy to PC**: Copy the JKSV backup ZIP file to your PC
+4. **Replace save data**: Open the ZIP file and replace the `user1.dat` file inside with your PC save (the decrypted save from this tool)
+5. **Copy back to Switch**: Copy the modified ZIP back to the JKSV folder on your Switch's SD card
+   - Hollow Knight: `/JKSV/Hollow Knight/`
+   - Silksong: `/JKSV/Hollow Knight  Silksong/`
+6. **Restore**: In JKSV, select the modified backup and choose "Restore"
+
+**Why this works:** This ensures the backup contains the required `.nx_save_meta.bin` metadata file while using your actual PC save data.
+
 ## Alternative: Automatic Cloud Sync
 
 For a more automated approach, you can set up JKSV to sync directly with cloud storage instead of manually transferring files via SD card.
